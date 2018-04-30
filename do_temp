@@ -1,0 +1,20 @@
+#!/bin/sh
+##################
+# do_temp - Read the TC74 temperature sensor and write the current temp to
+#          "last-known-good" files
+#
+# HISTORICAL INFORMATION -
+#
+#  2018-01-22  msipin/epowell  Created
+#################
+
+# All last-known-good data will be written to files in the following directory -
+LAST_KNOWN_GOOD_DIR=/usr/local/bin
+
+
+temp=`readtemp`
+echo $temp > ${LAST_KNOWN_GOOD_DIR}/temp
+echo $temp
+
+exit 0
+

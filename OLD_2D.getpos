@@ -1,0 +1,114 @@
+#!/bin/sh
+##################
+# getpos - Show the current GPS position 
+#
+# HISTORICAL INFORMATION -
+#
+#  2018-01-17  msipin/epowell  Created
+#  2018-01-18  msipin          Added support for GPGLL sentence. Fixed bug whereby did not
+#                              use the ${DEV} variable anywhere (doh!).
+#################
+
+# Eric's Bluetooth GPS Keychain - Works with only 10 lines
+#DEV=/dev/rfcomm4
+# Stratux USB GPS dongle - NEEDS 60 LINES TO DECODE !!!
+DEV=/dev/ttyACM0
+# Eric's "SKYRC" USB GPS + data-logger device
+#DEV=/dev/ttyUSB0
+# DIYmall VK18U7 serial device - NEEDS ABOUT 20 LINES! (FAILED! Likely due to static shock)
+# Stratux wired directly to UART/serial - NEEDS 60 LINES TO DECODE !!!
+#DEV=/dev/serial0
+
+
+##    $GPGGA XXXX.XXXX N YYYYY.YYYY W
+##    $GPRMC A XXXX.XXXX N YYYYY.YYYY
+##      $1      $2      $3   $4       $5  
+##    $GPGLL,XXXX.XXXXX,N,YYYYY.YYYYY,W,000426.00,A,A*72
+
+##              $3    $4   $5       $6
+##    $GPGGA XXXX.XXXX N YYYYY.YYYY W
+##              $4      $5   $6       $7
+##    $GPRMC A XXXX.XXXX N YYYYY.YYYY W
+
+##  if ($1 == "$GPGGA")		print $3","$4","$5","$6
+##  if ($1 == "$GPRMC")		print $4","$5","$6","$7
+##  if ($1 == "$GPGLL")		print $2","$3","$4","$5
+
+
+# grep -v "NMEA unknown msg" ${DEV} | head -40 | egrep "GPGGA|GPRMC|GPGLL" | head | awk -F"," '{
+# Stratus needs "head -60"
+# VK18U7 needs about -30 (lots of "GPSTXT" messages)
+head -60 ${DEV} | egrep "GPGGA|GPRMC|GPGLL" | head | awk -F"," '{
+
+LAT=0
+LAT_EXT=0.0
+LON=0
+LON_EXT=0.0
+
+if ($1 == "$GPGLL") {
+	##print $1" - "$2","$3","$4","$5
+
+	LAT=($2/100)
+	LON=($4/100)
+
+	LAT_NS=$3
+	LON_EW=$5
+}
+
+
+if ($1 == "$GPGGA") {
+	##print $1" - "$3","$4","$5","$6
+
+	LAT=($3/100)
+	LON=($5/100)
+
+	LAT_NS=$4
+	LON_EW=$6
+}
+
+
+if ($1 == "$GPRMC") {
+	##print $1" - "$4","$5","$6","$7
+
+	LAT=($4/100)
+	LON=($6/100)
+
+	LAT_NS=$5
+	LON_EW=$7
+}
+
+
+if ((LAT > 0.00) && (LON > 0.00)) {
+	LAT_DEG=int(LAT)
+	LAT_EXT=((LAT - LAT_DEG)*100)
+	##LAT_MIN=int(LAT_EXT)
+	##LAT_SEC=((LAT_EXT - LAT_MIN)*100)
+	##printf "LAT_DEG=%d\n",LAT_DEG
+	##printf "LAT_EXT=%d\n",LAT_EXT
+	##printf "LAT_MIN=%d\n",LAT_MIN
+	##printf "LAT_SEC=%2.2f\n",LAT_SEC
+
+
+	LON_DEG=int(LON)
+	LON_EXT=((LON - LON_DEG)*100)
+	##LON_MIN=int(LON_EXT)
+	##LON_SEC=((LON_EXT - LON_MIN)*100)
+	##printf "LON_DEG=%d\n",LON_DEG
+	##printf "LON_EXT=%d\n",LON_EXT
+	##printf "LON_MIN=%d\n",LON_MIN
+	##printf "LON_SEC=%2.2f\n",LON_SEC
+
+	LAT=LAT_DEG + (LAT_EXT/60)
+	LON=LON_DEG + (LON_EXT/60)
+
+}
+
+printf "%3.6f,%s,%3.6f,%s\n",LAT,LAT_NS,LON,LON_EW
+
+
+##printf "%3.6f,%s,%3.6f,%s\n",LAT,LAT_NS,LON,LON_EW
+
+}' | sort -u | grep "," | tail -1
+###}'
+
+exit 0

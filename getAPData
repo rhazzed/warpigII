@@ -1,0 +1,10 @@
+#!/bin/sh
+
+data1=`getpos`
+data2=`iwconfig 2>/dev/null | egrep "ESSID:|..:..:..:..:..:.." | grep -v "ESSID:off"`
+
+echo ${data1}
+echo ${data2}
+
+exit 0
+
