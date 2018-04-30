@@ -21,9 +21,9 @@ fi
 # port of the GPS chip
 # VK18U7 connected to UART/serial port
 # Also tried, but FAILED, Stratux wired directly to UART/serial port
-#PORT=/dev/serial0
+PORT=/dev/serial0
 # Stratux connected over USB
-PORT=/dev/ttyACM0
+#PORT=/dev/ttyACM0
 
 stty -F ${PORT} 9600
 stty -F ${PORT} ispeed 9600
@@ -41,7 +41,10 @@ cat /etc/motd
 (/usr/bin/nohup /usr/local/bin/tempDaemon 2>&1 >> /usr/local/bin/tempdata.log)&
 
 # Start sending telemetry!
-###(/usr/bin/nohup /usr/local/bin/sendTelemetry)&
+(/usr/bin/nohup /usr/local/bin/sendTelemetry)&
+
+# Start sending APRS!
+(/usr/bin/nohup /home/pifm/sendAPRS)&
 
 exit 0
 
