@@ -44,7 +44,10 @@ cat /etc/motd
 (/usr/bin/nohup /usr/local/bin/sendTelemetry)&
 
 # Start sending APRS!
-(/usr/bin/nohup /home/pifm/sendAPRS)&
+#(/usr/bin/nohup /home/pifm/sendAPRS)&
+
+# Start the camera daemon
+(/usr/bin/nohup /usr/local/bin/cameraDaemon 2>&1 >> /usr/local/bin/cameradata.log)&
 
 exit 0
 
