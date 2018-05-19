@@ -6,13 +6,14 @@
 # HISTORICAL INFORMATION -
 #
 #  2018-01-22  msipin/epowell  Created
+#  2018-05-18  msipin/epowell  Supported command-line I2C address
 #################
 
 # All last-known-good data will be written to files in the following directory -
 LAST_KNOWN_GOOD_DIR=/usr/local/bin
 
 
-temp=`readtemp`
+temp=`readtemp 0x49`
 echo $temp > ${LAST_KNOWN_GOOD_DIR}/temp
 echo $temp
 
