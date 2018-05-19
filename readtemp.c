@@ -1,3 +1,12 @@
+//*******************************************************
+//* readtemp.c - Read an I2C temperature probe
+//*
+//* HISTORICAL INFORMATION -
+//*
+//*  2018-05-18  msipin  Added this header. Allowed user to specify
+//*                      which I2C address to read from on the
+//*                      command line.
+//*******************************************************
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
@@ -14,9 +23,9 @@
 #include <linux/i2c-dev.h>
 
 
-int main()
+int main(int argc, char *argv[])
 {
-  int address=0x49;
+  int address=0x49;	// Default, if none specified on the command-line
   char bus=1;
   int temp = 0;
   unsigned char msb, lsb;
@@ -24,6 +33,24 @@ int main()
 	int fd;// File descriptor
 	char *fileName;
 	unsigned char buf[10]; // Buffer for data being read/ written on the i2c bus
+
+
+	int n = 0;
+	int num = 0;
+	if (argc > 1) {
+		address = 0;
+		num = sscanf(argv[1], "0x%02x%c", &address, &n);
+		//printf("DEBUG: num=%d, n=%d, address %d [0x%02xh]\n", num, n, address, address);
+		if ((num != 1) || (n != 0)) {
+			printf("DEBUG: FAILURE!\n");
+			exit(2);
+		}
+		//else {
+		//	printf("DEBUG: GOOD!\n");
+		//}
+	}
+	//exit(2); // FOR TESTING
+
 
 	if (bus == 1)
 		fileName = "/dev/i2c-1"; // Name of the port we will be using
