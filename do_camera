@@ -5,6 +5,7 @@
 # HISTORICAL INFORMATION -
 #
 #  2018-05-18  msipin  Created
+#  2018-05-24  epowell Added parameters to adapt to both motion and full-sun conditions
 ##########################
 
 PICTURE_DIR=/usr/local/bin/pictures
@@ -15,7 +16,8 @@ NOW=`date '+%Y-%m-%d.%H%M%S'`
 echo "Taking picture at ${NOW}..."
 
 ## /usr/bin/raspistill --timeout 1 --encoding jpg --hflip --vflip --datetime --output ${PICTURE_DIR}/${NOW}%010.jpg
-/usr/bin/raspistill --timeout 1 --encoding jpg --hflip --vflip --output ${PICTURE_DIR}/${NOW}.jpg
+## /usr/bin/raspistill --timeout 1 --encoding jpg --hflip --vflip --output ${PICTURE_DIR}/${NOW}.jpg
+/usr/bin/raspistill --awb sun --exposure auto --shutter 500 --timeout 1 --encoding jpg --hflip --vflip --output ${PICTURE_DIR}/${NOW}.jpg
 
 exit $?
 
