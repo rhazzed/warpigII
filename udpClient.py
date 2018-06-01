@@ -3,6 +3,11 @@
 '''
     udp socket server used for collecting telemetry from Warpig
 
+USAGE: python udpClient.py <port_number>
+
+Typically, I ran three copies of this program on three different ports,
+which were 53 (DNS), 80 (HTTP) and 2947 (GPSD)
+
 2018-01-30  msipin  Added check for valid payload, as people are abusing this
                     on port 53/1053. Also immediately flush output so no more
                     waiting to see if anything new has arrived.
