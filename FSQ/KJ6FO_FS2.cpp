@@ -189,7 +189,7 @@ void GetFix(int nFixes)
 	printf("%f,",CurrLat);
 	fp=fopen("/usr/local/bin/lon","r");
 	fscanf(fp, "%f",&CurrLon);
-	# Adjust for Western hemisphere
+	// Adjust for Western hemisphere
 	CurrLon = 0.0 - CurrLon;
 	fclose(fp);
 	printf("%f,",CurrLon);
