@@ -87,7 +87,7 @@ KJ6FOWSPR jtencode;
 // Global variables
 //
 
-char MyCallsign[] = "KA9CQL/B";
+char MyCallsign[] = "N9RZR/B";
 
 uint8_t RadioPower_dbm = WSPR_POWER_DBM; 
 #define TXBUFFERSIZE 512
@@ -189,6 +189,8 @@ void GetFix(int nFixes)
 	printf("%f,",CurrLat);
 	fp=fopen("/usr/local/bin/lon","r");
 	fscanf(fp, "%f",&CurrLon);
+	# Adjust for Western hemisphere
+	CurrLon = 0.0 - CurrLon;
 	fclose(fp);
 	printf("%f,",CurrLon);
 
