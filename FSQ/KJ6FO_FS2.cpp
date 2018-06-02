@@ -1,4 +1,4 @@
-//
+
 //
 // Flying Squirrel #2 flight computer software
 //
@@ -36,6 +36,7 @@
 #include <unistd.h>
 #include<iostream>
 #include <chrono>
+#include <time.h>
 
 //#define CALIBRATIONADJUST  -18627L // Measured from calibration program.  Proto board 1
 #define CALIBRATIONADJUST  -7800L // Measured from calibration program. FS2 Flight Hardware Board #2
@@ -97,21 +98,20 @@ uint8_t tx_buffer[TXBUFFERSIZE+1];
 // Global GPS Info
 //
 // Current values of time and position etc.
-long LastLat = 34.492787;  // Last reported Lat
-long LastLon = -117.407607;  // Last reported Long
-long CurrLat = LastLat;  // Current Lat
-long CurrLon = LastLon;  // Current Long
-long CurrAlt = 982.90;    // Current Altitude
+float LastLat = 34.492787;  // Last reported Lat
+float LastLon = -117.407607;  // Last reported Long
+float CurrLat = LastLat;  // Current Lat
+float CurrLon = LastLon;  // Current Long
+float CurrAlt = 982.90;    // Current Altitude
 char CurrentGridSquare[7] = "DM15hl";  // 6 digit grid square
-float CurrentTemp = 25; // Degrees C
+float CurrentTemp1 = 25; // Degrees C
+float CurrentTemp2 = 25; // Degrees C
 volatile int CurrFix = 1; //  Fix number (i.e. # of fixes from GPS)
 volatile int CurrDays = 1; //  # of Days
 volatile int CurrHours = 1; //  # of Hours
 volatile int CurrMinutes = 1;
-volatile int CurrSeconds = 1;
 int LastSecond = -1;   // used by time debug messages in loop() 
 
-float CurrentVolts = 4.5; // Measured battery voltage
 bool bRadioIsOn = false;
 
 
@@ -128,29 +128,6 @@ void RadioPower(int OnOff)
 	printf("R PWR %s\n", (OnOff ? "ON" : "OFF"));
 	//digitalWrite(RADIOPOWER_PIN, OnOff);
 	bRadioIsOn = OnOff;
-}
-
-
-//
-// Get position altitude andtime fix from GPS
-//
-// nFixes should be 45 or less.
-void GetFix(int nFixes)
-{
-#if DEBUGMESSAGES
-	printf("GetFix()\n");
-#endif 
-
-#if DEBUGMESSAGES
-	//Serial.print("Min=");Serial.println(CurrMinutes);
-	printf("%f,%f", CurrLat, CurrLon);
-	printf("A=%f",CurrAlt);
-	//Serial.print("H=");Serial.println(gps.hdop());
-	printf("G=%s",CurrentGridSquare);
-#endif
-
-	CurrFix++; // Bump Fix count
-
 }
 
 
@@ -191,10 +168,54 @@ void Calc6DigitGridSquare(char *GridSquare6Digits, double lat, double lon)
 	GridSquare6Digits[6] = (char)0;
 }
 
+//
+// Get position altitude andtime fix from GPS
+//
+// nFixes should be 45 or less.
+void GetFix(int nFixes)
+{
+
+#if DEBUGMESSAGES
+	printf("GetFix()\n");
+#endif 
+
+	FILE *fp=fopen("/usr/local/bin/alt","r");
+	fscanf(fp, "%f",&CurrAlt);
+	fclose(fp);
+	printf("A=%.2f,",CurrAlt);
+	fp=fopen("/usr/local/bin/lat","r");
+	fscanf(fp, "%f",&CurrLat);
+	fclose(fp);
+	printf("%f,",CurrLat);
+	fp=fopen("/usr/local/bin/lon","r");
+	fscanf(fp, "%f",&CurrLon);
+	fclose(fp);
+	printf("%f,",CurrLon);
+
+	Calc6DigitGridSquare(CurrentGridSquare, CurrLat / 1000000.0, CurrLon / 1000000.0);
+
+#if DEBUGMESSAGES
+	//Serial.print("Min=");Serial.println(CurrMinutes);
+	printf(",%f,%f,", CurrLat, CurrLon);
+	printf(",A=%.2f,",CurrAlt);
+	//Serial.print(",H=");Serial.println(gps.hdop());
+	printf(",G=%s,",CurrentGridSquare);
+#endif
+
+	//CurrFix++; // Bump Fix count
+
+}
+
+
+
 // Read the temp DS18B20 sensor
 void GetCurrentTemp()
 {
-	//CurrentTemp = (float)raw / 16.0;  // Degrees C
+	FILE *fp=fopen("/usr/local/bin/temp","r");
+	int blah1;
+	fscanf(fp,"%f,C,%d,F,%f,C,",&CurrentTemp1,&blah1,&CurrentTemp2);
+	fclose(fp);
+	//CurrentTemp1 = (float)raw / 16.0;  // Degrees C
 }
 
 
@@ -231,16 +252,6 @@ int CalcFreqDriftDelta(float TempC)
 //  Power Management etc.
 //
 
-//
-// Get the current battery voltage
-//
-void GetCurrentVolts()
-{
-	// CurrentVolts = (v / 1023.0) * 6.35; // Scale hand tweaked to get calibrated result matching volt meter.
-#if DEBUGMESSAGES
-	printf("V=%f",CurrentVolts);
-#endif
-}
 
 //
 // Get the radio board set up and ready to transmit
@@ -260,7 +271,7 @@ void StartRadio()
 		//si5351.set_correction(CALIBRATIONADJUST); // Measured value from calibration program
 		si5351.set_pll(SI5351_PLL_FIXED, SI5351_PLLA);
 		int ret_val = si5351.set_freq(WSPR_DEFAULT_FREQ, SI5351_CLK0); // Get radio on freq. Use WSPR freq for now.
-fprintf(stderr, "\nDEBUG: set_freq(%ld) returned %d\n", WSPR_DEFAULT_FREQ, ret_val);
+//fprintf(stderr, "\nDEBUG: set_freq(%ld) returned %d\n", WSPR_DEFAULT_FREQ, ret_val);
 		si5351.drive_strength(SI5351_CLK0, SI5351_DRIVE_8MA); // Set for max power if desired
 		si5351.output_enable(SI5351_CLK0, 0); // Disable the clock initially
 		printf("si5351 Started (Clock0 off)\n");
@@ -286,8 +297,8 @@ void SendTelemetry(unsigned long XmitFrequency, uint8_t *tx_buffer, int symbol_c
 	si5351.output_enable(SI5351_CLK0, 1);  // Radio xmit enabled. 
 
 	uint64_t AdjustedXmitFreq = (XmitFrequency * SI5351_FREQ_MULT);  //Convert to 100th Hz
-	AdjustedXmitFreq -= CalcFreqDriftDelta(CurrentTemp); //adjust for temp
-fprintf(stderr, "\nDEBUG: AdjustedXmitFreq: %ld\n",AdjustedXmitFreq);
+	AdjustedXmitFreq -= CalcFreqDriftDelta(CurrentTemp1); //adjust for temp
+//fprintf(stderr, "\nDEBUG: AdjustedXmitFreq: %ld\n",AdjustedXmitFreq);
 
 	// Radio oscillator drifts up in freq as ambient temp cools down. Need time to fine tune signal on Rx.
 	if (bTuningGuide) // Xmit tuning guide?
@@ -296,18 +307,19 @@ fprintf(stderr, "\nDEBUG: AdjustedXmitFreq: %ld\n",AdjustedXmitFreq);
 		// Xmit tuning guide tone for FSQ
 		printf("\nTune Start.\n");
 		int ret_val = si5351.set_freq(AdjustedXmitFreq, SI5351_CLK0);
-fprintf(stderr, "\nDEBUG: set_freq(%ld) returned %d\n", AdjustedXmitFreq, ret_val);
-		sleep(5);  // 5 Seconds.
+//fprintf(stderr, "\nDEBUG: set_freq(%ld) returned %d\n", AdjustedXmitFreq, ret_val);
+		sleep(7);  // 7 Seconds.
 		printf("\nTune Stop.\n");
 	}
 
+	printf("Symbols Start...\n");
 	// Now transmit the channel symbols
 	for (int i = 0; i < symbol_count; i++)
 	{
 		auto starttime = std::chrono::high_resolution_clock::now();
-		printf("Symbol %d Start...", i);
+		//printf("Symbol %d Start...", i);
 		int ret_val = si5351.set_freq(AdjustedXmitFreq + ((tx_buffer[i] * tone_spacing)/ tone_divisor), SI5351_CLK0);
-fprintf(stderr, "\nDEBUG: set_freq(%ld) returned %d\n", (AdjustedXmitFreq + ((tx_buffer[i] * tone_spacing)/ tone_divisor)), ret_val);
+//fprintf(stderr, "\nDEBUG: set_freq(%ld) returned %d\n", (AdjustedXmitFreq + ((tx_buffer[i] * tone_spacing)/ tone_divisor)), ret_val);
 		auto endtime = std::chrono::high_resolution_clock::now();
 		unsigned long duration=0;
 		do {
@@ -315,9 +327,10 @@ fprintf(stderr, "\nDEBUG: set_freq(%ld) returned %d\n", (AdjustedXmitFreq + ((tx
 			duration = (unsigned long)(std::chrono::duration_cast<std::chrono::microseconds>(endtime - starttime).count());
 
 		} while (duration < tone_delay); // Spin until time is up
-		printf("Symbol %d Stop\n", i);
+		//printf("Symbol %d Stop\n", i);
 		
 	}
+	printf("\nSymbols Stop.\n");
 
 	// Turn off the radio outout
 	printf("\nClock0 off.\n");
@@ -348,14 +361,27 @@ void XmitFSQ(unsigned long BaudRate,bool bLeaveRadioOn)
 
 	// KJ6FO/B FS#2 FFFFF HHH:MM 999999.9m -99.9999,-999.9999 -99.99c 9.99v  // Message format
 
+	// Update Position
+	GetFix(1);
+
 	// Update Temp 
 	GetCurrentTemp();
 
 	// Compose Telemetry message
 	char Message[299+1];
+
+
+	// Get current time
+	time_t theTime = time(NULL);
+	struct tm *aTime = localtime(&theTime);
+
+	CurrDays = aTime->tm_mday;
+	CurrHours = aTime->tm_hour;
+	CurrMinutes = aTime->tm_min;
+
 /*
  */
-	sprintf(Message,"[fs2.txt]hab %d %d:%02d:%02d %dm %ld,%ld %3.1fc %.2fv     \\b",
+	sprintf(Message,"[fs2.txt]hab %d %d:%02d:%02d %.2fm %02.6f,%03.6f %3.1fc %3.1fv     \\b",
 	    CurrFix,		      // OK
 	    CurrDays,			 // OK
 	    CurrHours,
@@ -363,8 +389,8 @@ void XmitFSQ(unsigned long BaudRate,bool bLeaveRadioOn)
 	    CurrAlt,				      // OK
 	    CurrLat,
 	    CurrLon,
-	    CurrentTemp,
-	    CurrentVolts);
+	    CurrentTemp1,
+	    CurrentTemp2);
 
 	// Encode the message into FSQ Symbols
 	//uint8_t symbol_count =  jtencode.fsq_encode(MyCallsign, Message.c_str(), tx_buffer);
@@ -430,10 +456,12 @@ void XmitWSPR(int MessageType)
 }
 
 
-int main()
+int main(int argc, char *argv[])
 {
+	
+	CurrFix = atoi(argv[1]);
 	StartRadio();
-	XmitFSQ(FSQ_6_DELAY,false);
+	XmitFSQ(FSQ_3_DELAY,false);
 
 	return 0;
 }

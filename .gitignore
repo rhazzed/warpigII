@@ -1,6 +1,9 @@
-FSQ/KJ6FOWSPR.o
-FSQ/KJ6FO_FS2
-FSQ/KJ6FO_FS2.o
-FSQ/si5351.o
-FSQ/sizeof
+# Object files
+FSQ/*.o
 
+# Executables
+FSQ/KJ6FO_FS2
+
+# Specific files
+FSQ/sizeof*
+sccs
