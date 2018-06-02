@@ -87,7 +87,7 @@ KJ6FOWSPR jtencode;
 // Global variables
 //
 
-char MyCallsign[] = "KA9CQL/B";
+char MyCallsign[] = "N9RZR/B";
 
 uint8_t RadioPower_dbm = WSPR_POWER_DBM; 
 #define TXBUFFERSIZE 512
