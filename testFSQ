@@ -1,0 +1,14 @@
+#!/bin/sh
+#################
+# testFSQ - Run some FSQ tests
+#################
+
+COUNT=200
+
+while [ 1 ]
+do
+	/usr/local/bin/KJ6FO_FS2 $COUNT
+	COUNT=`expr $COUNT + 1`
+	#sleep 1
+	sleep 90
+done
