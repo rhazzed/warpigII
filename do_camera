@@ -24,7 +24,8 @@ echo "Taking picture at ${NOW}..."
 ## /usr/bin/raspistill --awb auto --exposure sports --shutter 500 --timeout 1 --encoding jpg --hflip --vflip --output ${PICTURE_DIR}/${NOW}.jpg
 
 # Eric's adjustments (corrected: awb/exposure switched)
-/usr/bin/raspistill --awb auto --exposure sports --shutter 500 --timeout 1 --encoding jpg --hflip --vflip --output ${PICTURE_DIR}/${NOW}.jpg
+##/usr/bin/raspistill --awb auto --exposure sports --shutter 500 --timeout 1 --encoding jpg --hflip --vflip --output ${PICTURE_DIR}/${NOW}.jpg
+/usr/bin/raspistill --awb auto --exposure auto --timeout 1 --encoding jpg --hflip --vflip --output ${PICTURE_DIR}/${NOW}.jpg
 
 exit $?
 
